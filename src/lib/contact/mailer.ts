@@ -51,15 +51,23 @@ export function formatContactEmailHtml(submission: ContactSubmission): string {
   `.trim();
 }
 
+export function parseRecipientEmails(raw?: string): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
 export async function sendContactMessage(
   submission: ContactSubmission,
   env: Record<string, string | undefined> = process.env,
 ): Promise<DeliveryResult> {
   if (env.RESEND_API_KEY) {
-    const to = env.CONTACT_TO_EMAIL;
+    const recipients = parseRecipientEmails(env.CONTACT_TO_EMAIL);
     const from = env.CONTACT_FROM_EMAIL;
 
-    if (!to || !from) {
+    if (recipients.length === 0 || !from) {
       throw new ContactConfigurationError(
         "RESEND_API_KEY is set, but CONTACT_TO_EMAIL or CONTACT_FROM_EMAIL is missing.",
       );
@@ -74,7 +82,7 @@ export async function sendContactMessage(
       signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
         from,
-        to: [to],
+        to: recipients,
         reply_to: submission.email,
         subject: `Website Contact: ${submission.firstName} ${submission.lastName}`,
         text: formatContactEmailText(submission),
@@ -93,10 +101,10 @@ export async function sendContactMessage(
   if (env.SMTP_HOST) {
     const port = Number.parseInt(env.SMTP_PORT ?? "587", 10);
     const secure = env.SMTP_SECURE === "true" || port === 465;
-    const to = env.CONTACT_TO_EMAIL;
+    const recipients = parseRecipientEmails(env.CONTACT_TO_EMAIL);
     const from = env.CONTACT_FROM_EMAIL ?? env.SMTP_USER;
 
-    if (!to || !from) {
+    if (recipients.length === 0 || !from) {
       throw new ContactConfigurationError(
         "SMTP_HOST is set, but CONTACT_TO_EMAIL or CONTACT_FROM_EMAIL is missing.",
       );
@@ -120,7 +128,7 @@ export async function sendContactMessage(
 
     await transporter.sendMail({
       from,
-      to,
+      to: recipients,
       replyTo: submission.email,
       subject: `Website Contact: ${submission.firstName} ${submission.lastName}`,
       text: formatContactEmailText(submission),
