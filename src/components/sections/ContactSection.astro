@@ -3,8 +3,8 @@ import { CircleAlert, CircleCheck, Lock, Send } from "@lucide/astro";
 import { Alert, AlertDescription } from "@/components/starwind/alert";
 import { Button } from "@/components/starwind/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/starwind/card";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/starwind/field";
 import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
 import { Spinner } from "@/components/starwind/spinner";
 import { Textarea } from "@/components/starwind/textarea";
 import { DOCTOR_PROFILE } from "@/data/profile";
@@ -29,12 +29,12 @@ import { DOCTOR_PROFILE } from "@/data/profile";
         <input id="contact-website" type="text" name="website" tabindex="-1" autocomplete="off" />
       </div>
 
-      <FieldGroup class="gap-4">
+      <div class="flex flex-col gap-4">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel for="contact-first-name">
+          <div class="flex flex-col gap-2">
+            <Label for="contact-first-name">
               First Name <span class="text-error" aria-hidden="true">*</span>
-            </FieldLabel>
+            </Label>
             <Input
               id="contact-first-name"
               name="firstName"
@@ -44,13 +44,13 @@ import { DOCTOR_PROFILE } from "@/data/profile";
               placeholder="Jane"
               aria-describedby="error-firstName"
             />
-            <FieldError id="error-firstName" data-field-error="firstName" class="hidden" />
-          </Field>
+            <p id="error-firstName" data-field-error="firstName" class="hidden text-sm font-medium text-error" role="alert"></p>
+          </div>
 
-          <Field>
-            <FieldLabel for="contact-last-name">
+          <div class="flex flex-col gap-2">
+            <Label for="contact-last-name">
               Last Name <span class="text-error" aria-hidden="true">*</span>
-            </FieldLabel>
+            </Label>
             <Input
               id="contact-last-name"
               name="lastName"
@@ -60,15 +60,15 @@ import { DOCTOR_PROFILE } from "@/data/profile";
               placeholder="Doe"
               aria-describedby="error-lastName"
             />
-            <FieldError id="error-lastName" data-field-error="lastName" class="hidden" />
-          </Field>
+            <p id="error-lastName" data-field-error="lastName" class="hidden text-sm font-medium text-error" role="alert"></p>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel for="contact-email">
+          <div class="flex flex-col gap-2">
+            <Label for="contact-email">
               Email <span class="text-error" aria-hidden="true">*</span>
-            </FieldLabel>
+            </Label>
             <Input
               id="contact-email"
               name="email"
@@ -78,11 +78,11 @@ import { DOCTOR_PROFILE } from "@/data/profile";
               placeholder="you@example.com"
               aria-describedby="error-email"
             />
-            <FieldError id="error-email" data-field-error="email" class="hidden" />
-          </Field>
+            <p id="error-email" data-field-error="email" class="hidden text-sm font-medium text-error" role="alert"></p>
+          </div>
 
-          <Field>
-            <FieldLabel for="contact-phone">Phone Number</FieldLabel>
+          <div class="flex flex-col gap-2">
+            <Label for="contact-phone">Phone Number</Label>
             <Input
               id="contact-phone"
               name="phoneNumber"
@@ -91,14 +91,14 @@ import { DOCTOR_PROFILE } from "@/data/profile";
               placeholder="(937) 555-0100"
               aria-describedby="error-phoneNumber"
             />
-            <FieldError id="error-phoneNumber" data-field-error="phoneNumber" class="hidden" />
-          </Field>
+            <p id="error-phoneNumber" data-field-error="phoneNumber" class="hidden text-sm font-medium text-error" role="alert"></p>
+          </div>
         </div>
 
-        <Field>
-          <FieldLabel for="contact-message">
+        <div class="flex flex-col gap-2">
+          <Label for="contact-message">
             Message <span class="text-error" aria-hidden="true">*</span>
-          </FieldLabel>
+          </Label>
           <Textarea
             id="contact-message"
             name="message"
@@ -107,9 +107,9 @@ import { DOCTOR_PROFILE } from "@/data/profile";
             placeholder="How can Dr. Kirpaul help you?"
             aria-describedby="error-message"
           />
-          <FieldError id="error-message" data-field-error="message" class="hidden" />
-        </Field>
-      </FieldGroup>
+          <p id="error-message" data-field-error="message" class="hidden text-sm font-medium text-error" role="alert"></p>
+        </div>
+      </div>
 
       <div id="contact-status" aria-live="polite" class="space-y-2">
         <Alert id="contact-success-alert" variant="success" class="hidden items-center">
