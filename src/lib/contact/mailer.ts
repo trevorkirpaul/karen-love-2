@@ -23,7 +23,7 @@ export function escapeHtml(value: string): string {
 
 export function formatContactEmailText(submission: ContactSubmission): string {
   return [
-    `New contact form message from ${submission.firstName} ${submission.lastName}`,
+    `karenkirpaul.com Contact Form Message from ${submission.firstName} ${submission.lastName}`,
     "",
     `Name: ${submission.firstName} ${submission.lastName}`,
     `Email: ${submission.email}`,
@@ -41,7 +41,7 @@ export function formatContactEmailHtml(submission: ContactSubmission): string {
   const message = escapeHtml(submission.message).replaceAll("\n", "<br />");
 
   return `
-    <h2>New Contact Form Message</h2>
+    <h2>karenkirpaul.com Contact Form Message</h2>
     <p><strong>Name:</strong> ${fullName}</p>
     <p><strong>Email:</strong> ${email}</p>
     <p><strong>Phone:</strong> ${phone}</p>

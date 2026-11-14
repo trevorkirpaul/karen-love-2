@@ -24,6 +24,7 @@ describe("mailer formatting & escaping", () => {
 
   it("formats plain text email body", () => {
     const text = formatContactEmailText(sampleSubmission);
+    expect(text).toContain("karenkirpaul.com Contact Form Message");
     expect(text).toContain("Jane Doe");
     expect(text).toContain("jane@example.com");
     expect(text).toContain("937-555-0100");
@@ -31,6 +32,7 @@ describe("mailer formatting & escaping", () => {
 
   it("escapes user input in HTML email body and converts newlines", () => {
     const html = formatContactEmailHtml(sampleSubmission);
+    expect(html).toContain("<h2>karenkirpaul.com Contact Form Message</h2>");
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;<br />Line 2");
   });
