@@ -1,0 +1,22 @@
+# Example systemd unit for the standalone contact API microservice.
+# Copy to /etc/systemd/system/karen-contact.service and run:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now karen-contact
+
+[Unit]
+Description=Karen Kirpaul Contact API Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/podiatry-contact
+EnvironmentFile=/opt/podiatry-contact/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/podiatry-contact/dist-server/contact.mjs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

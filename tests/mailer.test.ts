@@ -56,6 +56,32 @@ describe("sendContactMessage", () => {
     ).rejects.toBeInstanceOf(ContactConfigurationError);
   });
 
+  it("delivers via Resend API when RESEND_API_KEY is configured", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "email_123" }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await sendContactMessage(sampleSubmission, {
+      RESEND_API_KEY: "re_test_key",
+      CONTACT_FROM_EMAIL: "website@karenkirpaul.com",
+      CONTACT_TO_EMAIL: "office@karenkirpaul.com",
+    });
+
+    expect(result).toEqual({ channel: "resend" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.resend.com/emails",
+      expect.objectContaining({ method: "POST" }),
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("throws ContactConfigurationError when RESEND_API_KEY is set without sender/recipient", async () => {
+    await expect(
+      sendContactMessage(sampleSubmission, { RESEND_API_KEY: "re_test_key" }),
+    ).rejects.toBeInstanceOf(ContactConfigurationError);
+  });
+
   it("delivers via webhook when CONTACT_WEBHOOK_URL is configured", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

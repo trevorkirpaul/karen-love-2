@@ -1,14 +1,22 @@
-# Example Caddy v2 configuration for serving the static Astro build on an Ubuntu VPS.
+# Example Caddy v2 configuration for serving the static Astro build
+# and proxying /api/* to the lightweight Node contact service on an Ubuntu VPS.
 
 karenkirpaul.com, www.karenkirpaul.com {
 	root * /var/www/podiatry-site
 	encode zstd gzip
-	file_server
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "SAMEORIGIN"
 		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:4321
+	}
+
+	handle {
+		file_server
 	}
 }

@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import type { ContactSubmission } from "./schema";
 
 export interface DeliveryResult {
-  channel: "smtp" | "webhook" | "log";
+  channel: "resend" | "smtp" | "webhook" | "log";
 }
 
 export class ContactConfigurationError extends Error {
@@ -55,6 +55,41 @@ export async function sendContactMessage(
   submission: ContactSubmission,
   env: Record<string, string | undefined> = process.env,
 ): Promise<DeliveryResult> {
+  if (env.RESEND_API_KEY) {
+    const to = env.CONTACT_TO_EMAIL;
+    const from = env.CONTACT_FROM_EMAIL;
+
+    if (!to || !from) {
+      throw new ContactConfigurationError(
+        "RESEND_API_KEY is set, but CONTACT_TO_EMAIL or CONTACT_FROM_EMAIL is missing.",
+      );
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({
+        from,
+        to: [to],
+        reply_to: submission.email,
+        subject: `Website Contact: ${submission.firstName} ${submission.lastName}`,
+        text: formatContactEmailText(submission),
+        html: formatContactEmailHtml(submission),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "");
+      throw new Error(`Resend API error (${response.status}): ${errorBody}`);
+    }
+
+    return { channel: "resend" };
+  }
+
   if (env.SMTP_HOST) {
     const port = Number.parseInt(env.SMTP_PORT ?? "587", 10);
     const secure = env.SMTP_SECURE === "true" || port === 465;
