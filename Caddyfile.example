@@ -1,8 +1,9 @@
-# Example Caddy v2 configuration for deploying on a VPS.
-# Replace example.com with your domain and point reverse_proxy to the Astro Node server.
+# Example Caddy v2 configuration for serving the static Astro build on an Ubuntu VPS.
 
-example.com {
+karenkirpaul.com, www.karenkirpaul.com {
+	root * /var/www/podiatry-site
 	encode zstd gzip
+	file_server
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -10,6 +11,4 @@ example.com {
 		X-Frame-Options "SAMEORIGIN"
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
-
-	reverse_proxy 127.0.0.1:4321
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContactConfigurationError } from "@/lib/contact/mailer";
 import { clearRateLimitStore } from "@/lib/contact/rate-limit";
-import { handleContactPost } from "@/pages/api/contact";
+import { handleContactPost } from "@/lib/contact/handler";
 
 function makeJsonRequest(body: unknown, ip = "203.0.113.10"): Request {
   return new Request("https://example.com/api/contact", {

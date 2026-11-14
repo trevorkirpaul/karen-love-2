@@ -1,4 +1,3 @@
-import type { APIRoute } from "astro";
 import {
   ContactConfigurationError,
   sendContactMessage,
@@ -12,8 +11,6 @@ import {
   normalizeRawContactPayload,
   type ContactSubmission,
 } from "@/lib/contact/schema";
-
-export const prerender = false;
 
 export interface ContactHandlerDeps {
   sendMessage?: (submission: ContactSubmission) => Promise<DeliveryResult>;
@@ -69,7 +66,6 @@ async function parseRequestBody(request: Request): Promise<Record<string, unknow
       return record;
     }
 
-    // Fallback: try JSON if no content-type header was provided
     const text = await request.text();
     if (!text) return null;
     const parsed: unknown = JSON.parse(text);
@@ -177,7 +173,3 @@ export async function handleContactPost(
     );
   }
 }
-
-export const POST: APIRoute = async ({ request, clientAddress }) => {
-  return handleContactPost(request, clientAddress);
-};
