@@ -1,0 +1,50 @@
+---
+import { BookOpen } from "@lucide/astro";
+import { Badge } from "@/components/starwind/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/starwind/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/starwind/item";
+import { PUBLICATIONS } from "@/data/profile";
+---
+
+<Card id="publications" class="scroll-mt-20 border-border bg-card shadow-sm">
+  <CardHeader class="border-b border-border px-6 py-5">
+    <p class="text-xs font-semibold tracking-wider text-pink-700 uppercase dark:text-pink-400">
+      Academic &amp; Clinical Research
+    </p>
+    <CardTitle class="mt-1 text-xl font-bold text-foreground">Peer-Reviewed Publications</CardTitle>
+  </CardHeader>
+
+  <CardContent class="p-6">
+    <ItemGroup class="gap-3">
+      {
+        PUBLICATIONS.map((pub) => (
+          <Item variant="muted" class="items-start border-border bg-muted/50">
+            <ItemMedia variant="icon" class="mt-0.5 border-border bg-card text-pink-600 dark:text-pink-400">
+              <BookOpen class="size-4" aria-hidden="true" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle class="leading-snug text-foreground">“{pub.citation}”</ItemTitle>
+              <ItemDescription class="text-muted-foreground">{pub.authorsAndJournal}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Badge
+                variant="outline"
+                class="border-pink-200 bg-pink-50 text-pink-900 dark:border-pink-800/60 dark:bg-pink-950/60 dark:text-pink-200"
+              >
+                {pub.year}
+              </Badge>
+            </ItemActions>
+          </Item>
+        ))
+      }
+    </ItemGroup>
+  </CardContent>
+</Card>

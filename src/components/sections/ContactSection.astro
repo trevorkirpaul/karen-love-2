@@ -1,0 +1,249 @@
+---
+import { CircleAlert, CircleCheck, Lock, Send } from "@lucide/astro";
+import { Alert, AlertDescription } from "@/components/starwind/alert";
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/starwind/card";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/starwind/field";
+import { Input } from "@/components/starwind/input";
+import { Spinner } from "@/components/starwind/spinner";
+import { Textarea } from "@/components/starwind/textarea";
+import { DOCTOR_PROFILE } from "@/data/profile";
+---
+
+<Card id="contact" class="scroll-mt-20 border-border bg-card shadow-sm">
+  <CardHeader class="border-b border-border px-6 py-5">
+    <p class="text-xs font-semibold tracking-wider text-pink-700 uppercase dark:text-pink-400">Get In Touch</p>
+    <CardTitle class="mt-1 text-2xl font-bold text-foreground">Send a Message</CardTitle>
+    <p class="mt-1 text-sm text-muted-foreground">
+      Have a question for{" "}
+      <strong class="font-semibold text-foreground">Dr. {DOCTOR_PROFILE.fullName}, {DOCTOR_PROFILE.credentials}</strong>?
+      Complete the form below and our team will follow up.
+    </p>
+  </CardHeader>
+
+  <CardContent class="p-6">
+    <form id="contact-form" action="/api/contact" method="post" class="space-y-4" novalidate>
+      <!-- Honeypot field for automated bot filtering -->
+      <div class="sr-only" aria-hidden="true">
+        <label for="contact-website">Leave this field empty</label>
+        <input id="contact-website" type="text" name="website" tabindex="-1" autocomplete="off" />
+      </div>
+
+      <FieldGroup class="gap-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel for="contact-first-name">
+              First Name <span class="text-error" aria-hidden="true">*</span>
+            </FieldLabel>
+            <Input
+              id="contact-first-name"
+              name="firstName"
+              type="text"
+              required
+              autocomplete="given-name"
+              placeholder="Jane"
+              aria-describedby="error-firstName"
+            />
+            <FieldError id="error-firstName" data-field-error="firstName" class="hidden" />
+          </Field>
+
+          <Field>
+            <FieldLabel for="contact-last-name">
+              Last Name <span class="text-error" aria-hidden="true">*</span>
+            </FieldLabel>
+            <Input
+              id="contact-last-name"
+              name="lastName"
+              type="text"
+              required
+              autocomplete="family-name"
+              placeholder="Doe"
+              aria-describedby="error-lastName"
+            />
+            <FieldError id="error-lastName" data-field-error="lastName" class="hidden" />
+          </Field>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field>
+            <FieldLabel for="contact-email">
+              Email <span class="text-error" aria-hidden="true">*</span>
+            </FieldLabel>
+            <Input
+              id="contact-email"
+              name="email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="you@example.com"
+              aria-describedby="error-email"
+            />
+            <FieldError id="error-email" data-field-error="email" class="hidden" />
+          </Field>
+
+          <Field>
+            <FieldLabel for="contact-phone">Phone Number</FieldLabel>
+            <Input
+              id="contact-phone"
+              name="phoneNumber"
+              type="tel"
+              autocomplete="tel"
+              placeholder="(937) 555-0100"
+              aria-describedby="error-phoneNumber"
+            />
+            <FieldError id="error-phoneNumber" data-field-error="phoneNumber" class="hidden" />
+          </Field>
+        </div>
+
+        <Field>
+          <FieldLabel for="contact-message">
+            Message <span class="text-error" aria-hidden="true">*</span>
+          </FieldLabel>
+          <Textarea
+            id="contact-message"
+            name="message"
+            rows={4}
+            required
+            placeholder="How can Dr. Kirpaul help you?"
+            aria-describedby="error-message"
+          />
+          <FieldError id="error-message" data-field-error="message" class="hidden" />
+        </Field>
+      </FieldGroup>
+
+      <div id="contact-status" aria-live="polite" class="space-y-2">
+        <Alert id="contact-success-alert" variant="success" class="hidden items-center">
+          <CircleCheck class="size-4" aria-hidden="true" />
+          <AlertDescription id="contact-success-text">
+            You have successfully sent your message.
+          </AlertDescription>
+        </Alert>
+
+        <Alert id="contact-error-alert" variant="error" class="hidden items-center">
+          <CircleAlert class="size-4" aria-hidden="true" />
+          <AlertDescription id="contact-error-text">
+            Your message could not be sent. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+
+      <Button id="contact-submit" type="submit" variant="primary" size="lg" class="w-full shadow-xs">
+        <Spinner id="contact-spinner" class="hidden size-4 text-current" />
+        <Send id="contact-send-icon" class="size-4" aria-hidden="true" />
+        <span id="contact-submit-label">Send Message</span>
+      </Button>
+
+      <p class="flex items-start gap-2 text-xs text-muted-foreground">
+        <Lock class="mt-0.5 size-3.5 shrink-0 text-muted-foreground/70" aria-hidden="true" />
+        <span>
+          For your privacy, please avoid including sensitive medical records or Protected Health Information (PHI) in
+          this form. For urgent medical needs, call the office directly.
+        </span>
+      </p>
+    </form>
+  </CardContent>
+</Card>
+
+<script>
+  const form = document.getElementById("contact-form") as HTMLFormElement | null;
+  const submitBtn = document.getElementById("contact-submit") as HTMLButtonElement | null;
+  const submitLabel = document.getElementById("contact-submit-label");
+  const spinner = document.getElementById("contact-spinner");
+  const sendIcon = document.getElementById("contact-send-icon");
+  const successAlert = document.getElementById("contact-success-alert");
+  const successText = document.getElementById("contact-success-text");
+  const errorAlert = document.getElementById("contact-error-alert");
+  const errorText = document.getElementById("contact-error-text");
+
+  function clearFieldErrors() {
+    document.querySelectorAll<HTMLElement>("[data-field-error]").forEach((el) => {
+      el.textContent = "";
+      el.classList.add("hidden");
+    });
+    form?.querySelectorAll<HTMLElement>("[aria-invalid='true']").forEach((el) => {
+      el.removeAttribute("aria-invalid");
+    });
+  }
+
+  function showFieldErrors(fieldErrors: Record<string, string>) {
+    for (const [field, message] of Object.entries(fieldErrors)) {
+      const errorEl = document.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
+      const inputEl = form?.querySelector<HTMLElement>(`[name="${field}"]`);
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.remove("hidden");
+      }
+      if (inputEl) {
+        inputEl.setAttribute("aria-invalid", "true");
+      }
+    }
+  }
+
+  function setLoading(isLoading: boolean) {
+    if (!submitBtn) return;
+    submitBtn.disabled = isLoading;
+    spinner?.classList.toggle("hidden", !isLoading);
+    sendIcon?.classList.toggle("hidden", isLoading);
+    if (submitLabel) {
+      submitLabel.textContent = isLoading ? "Sending..." : "Send Message";
+    }
+  }
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearFieldErrors();
+    successAlert?.classList.add("hidden");
+    errorAlert?.classList.add("hidden");
+
+    const formData = new FormData(form);
+    const payload = {
+      email: String(formData.get("email") ?? ""),
+      firstName: String(formData.get("firstName") ?? ""),
+      lastName: String(formData.get("lastName") ?? ""),
+      phoneNumber: String(formData.get("phoneNumber") ?? ""),
+      message: String(formData.get("message") ?? ""),
+      website: String(formData.get("website") ?? ""),
+    };
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+        fieldErrors?: Record<string, string>;
+      };
+
+      if (response.ok && result.ok) {
+        if (successText && result.message) {
+          successText.textContent = result.message;
+        }
+        successAlert?.classList.remove("hidden");
+        form.reset();
+        return;
+      }
+
+      if (result.fieldErrors) {
+        showFieldErrors(result.fieldErrors);
+      }
+      if (errorText) {
+        errorText.textContent = result.error ?? "Please check your entries and try again.";
+      }
+      errorAlert?.classList.remove("hidden");
+    } catch {
+      if (errorText) {
+        errorText.textContent = "Network error. Please try again later or call the office directly.";
+      }
+      errorAlert?.classList.remove("hidden");
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>

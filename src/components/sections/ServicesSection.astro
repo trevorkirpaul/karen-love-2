@@ -1,0 +1,38 @@
+---
+import { Activity, ShieldPlus, Sparkles, Stethoscope } from "@lucide/astro";
+import { Card, CardContent } from "@/components/starwind/card";
+import { CLINICAL_SERVICES } from "@/data/profile";
+---
+
+<section id="services" aria-labelledby="services-heading" class="scroll-mt-20">
+  <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-xs font-semibold tracking-wider text-pink-700 uppercase dark:text-pink-400">Clinical Focus</p>
+      <h2 id="services-heading" class="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        Comprehensive Foot &amp; Ankle Care
+      </h2>
+    </div>
+    <p class="max-w-md text-sm text-muted-foreground">
+      Personalized treatment plans combining conservative therapies, biomechanics, and surgical expertise.
+    </p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      CLINICAL_SERVICES.map((service) => (
+        <Card class="group border-border bg-card shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-pink-300 hover:shadow-md dark:hover:border-pink-700">
+          <CardContent class="flex h-full flex-col gap-3 p-5">
+            <div class="flex size-10 items-center justify-center rounded-xl bg-pink-50 text-pink-600 ring-1 ring-pink-200/80 transition-colors group-hover:bg-pink-600 group-hover:text-white dark:bg-pink-950/60 dark:text-pink-400 dark:ring-pink-800/60 dark:group-hover:bg-pink-500 dark:group-hover:text-white">
+              {service.icon === "activity" && <Activity class="size-5" aria-hidden="true" />}
+              {service.icon === "stethoscope" && <Stethoscope class="size-5" aria-hidden="true" />}
+              {service.icon === "shield" && <ShieldPlus class="size-5" aria-hidden="true" />}
+              {service.icon === "sparkles" && <Sparkles class="size-5" aria-hidden="true" />}
+            </div>
+            <h3 class="text-base font-semibold text-foreground">{service.title}</h3>
+            <p class="text-sm leading-relaxed text-muted-foreground">{service.description}</p>
+          </CardContent>
+        </Card>
+      ))
+    }
+  </div>
+</section>

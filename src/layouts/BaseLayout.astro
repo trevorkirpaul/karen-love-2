@@ -1,0 +1,96 @@
+---
+import "@/styles/starwind.css";
+import { ThemeInitScript } from "@starwind-ui/astro/theme";
+import { DOCTOR_PROFILE, LOCATIONS, SITE_METADATA } from "@/data/profile";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = SITE_METADATA.title, description = SITE_METADATA.description } = Astro.props;
+
+const canonicalUrl = Astro.url ? new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href : undefined;
+const gaId = import.meta.env.PUBLIC_GA_ID;
+
+const primaryLocation = LOCATIONS[0];
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "Physician",
+  name: `${DOCTOR_PROFILE.fullName}, ${DOCTOR_PROFILE.credentials}`,
+  medicalSpecialty: "Podiatric",
+  description,
+  ...(primaryLocation
+    ? {
+        telephone: primaryLocation.phone,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "30 W Rahn Rd #12",
+          addressLocality: "Dayton",
+          addressRegion: "OH",
+          postalCode: "45429",
+          addressCountry: "US",
+        },
+        worksFor: {
+          "@type": "MedicalClinic",
+          name: primaryLocation.name,
+        },
+      }
+    : {}),
+  sameAs: [DOCTOR_PROFILE.linkedInUrl],
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={SITE_METADATA.ogImage} />
+    <meta property="og:locale" content={SITE_METADATA.locale} />
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <ThemeInitScript />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    />
+
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+    {
+      gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+          <script is:inline define:vars={{ gaId }}>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+              dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+            gtag("config", gaId);
+          </script>
+        </>
+      )
+    }
+  </head>
+  <body class="min-h-screen bg-background text-foreground antialiased selection:bg-pink-100 selection:text-pink-950 dark:selection:bg-pink-900/60 dark:selection:text-pink-100">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-pink-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+    >
+      Skip to main content
+    </a>
+
+    <slot />
+  </body>
+</html>

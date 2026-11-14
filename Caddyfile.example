@@ -1,0 +1,15 @@
+# Example Caddy v2 configuration for deploying on a VPS.
+# Replace example.com with your domain and point reverse_proxy to the Astro Node server.
+
+example.com {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	reverse_proxy 127.0.0.1:4321
+}

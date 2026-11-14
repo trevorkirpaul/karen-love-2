@@ -1,0 +1,95 @@
+---
+import { ExternalLink, GraduationCap } from "@lucide/astro";
+import { Badge } from "@/components/starwind/badge";
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/starwind/card";
+import { CREDENTIALS_TIMELINE, DOCTOR_PROFILE } from "@/data/profile";
+
+const [leadParagraph, ...remainingParagraphs] = DOCTOR_PROFILE.bioParagraphs;
+---
+
+<section id="about" aria-labelledby="about-heading" class="scroll-mt-20">
+  <div class="grid gap-6 lg:grid-cols-12 lg:items-start">
+    <!-- Biography Card -->
+    <Card class="border-border bg-card shadow-sm lg:col-span-7">
+      <CardHeader class="border-b border-border px-6 py-5">
+        <p class="text-xs font-semibold tracking-wider text-pink-700 uppercase dark:text-pink-400">
+          Meet Your Physician
+        </p>
+        <CardTitle id="about-heading" class="mt-1 text-2xl font-bold text-foreground">
+          {DOCTOR_PROFILE.tagline}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent class="space-y-5 p-6">
+        <div class="space-y-4">
+          {
+            leadParagraph && (
+              <p class="text-base leading-relaxed font-medium text-foreground sm:text-[1.05rem]">
+                {leadParagraph}
+              </p>
+            )
+          }
+
+          <div class="space-y-3.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+            {remainingParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-border pt-4">
+          <Button
+            href={DOCTOR_PROFILE.linkedInUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outline"
+            class="border-border bg-card text-foreground hover:bg-muted"
+          >
+            <ExternalLink class="size-4 text-pink-600 dark:text-pink-400" aria-hidden="true" />
+            Connect on LinkedIn
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- Education & Credentials Timeline -->
+    <Card class="overflow-hidden border-border bg-card shadow-sm lg:col-span-5">
+      <CardHeader class="border-b border-pink-700/20 bg-gradient-to-r from-pink-700 to-rose-700 px-6 py-5 text-white dark:from-pink-800 dark:to-rose-900">
+        <div class="flex items-center gap-2.5">
+          <GraduationCap class="size-5 text-pink-100" aria-hidden="true" />
+          <CardTitle class="text-lg font-semibold text-white">Education &amp; Credentials</CardTitle>
+        </div>
+      </CardHeader>
+
+      <CardContent class="p-6">
+        <ol class="relative space-y-5 border-l border-pink-200 pl-5 dark:border-pink-800/70">
+          {
+            CREDENTIALS_TIMELINE.map((item) => (
+              <li class="relative">
+                <span
+                  aria-hidden="true"
+                  class="absolute -left-[25px] top-1.5 size-2.5 rounded-full border-2 border-card bg-pink-600 ring-2 ring-pink-100 dark:bg-pink-400 dark:ring-pink-950"
+                />
+                <p class="text-sm font-semibold text-foreground">{item.title}</p>
+                <p class="text-sm font-medium text-pink-700 dark:text-pink-400">{item.institution}</p>
+                <p class="mt-0.5 text-xs text-muted-foreground">{item.detail}</p>
+              </li>
+            ))
+          }
+        </ol>
+
+        <div class="mt-6 flex flex-wrap gap-2 border-t border-border pt-4">
+          {
+            DOCTOR_PROFILE.badges.map((badge) => (
+              <Badge
+                variant="secondary"
+                class="border border-pink-200 bg-pink-50 text-pink-900 dark:border-pink-800/60 dark:bg-pink-950/60 dark:text-pink-200"
+              >
+                {badge}
+              </Badge>
+            ))
+          }
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</section>

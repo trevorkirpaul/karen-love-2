@@ -1,0 +1,82 @@
+---
+import { Calendar, ExternalLink, Globe, MapPin, Phone } from "@lucide/astro";
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/starwind/card";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/starwind/item";
+import { APPOINTMENT_URL, LOCATIONS } from "@/data/profile";
+---
+
+<div id="locations" class="scroll-mt-20 space-y-4">
+  {
+    LOCATIONS.map((location) => (
+      <Card class="overflow-hidden border-border bg-card shadow-sm">
+        <CardHeader class="border-b border-border bg-muted/50 px-6 py-5">
+          <p class="text-xs font-semibold tracking-wider text-pink-700 uppercase dark:text-pink-400">
+            Practice Location
+          </p>
+          <CardTitle class="mt-1 text-xl font-bold text-foreground">{location.name}</CardTitle>
+        </CardHeader>
+
+        <CardContent class="space-y-5 p-6">
+          <ItemGroup class="gap-2.5">
+            {location.items.map((entry) => (
+              <a
+                href={entry.href}
+                target={entry.external ? "_blank" : undefined}
+                rel={entry.external ? "noopener noreferrer" : undefined}
+                class="group block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+              >
+                <Item
+                  variant="muted"
+                  size="sm"
+                  class="border-border bg-muted/50 transition-colors group-hover:border-pink-300 group-hover:bg-pink-50/70 dark:group-hover:border-pink-700 dark:group-hover:bg-pink-950/35"
+                >
+                  <ItemMedia variant="icon" class="border-border bg-card text-pink-600 dark:text-pink-400">
+                    {entry.icon === "schedule" && <Calendar class="size-4" aria-hidden="true" />}
+                    {entry.icon === "phone" && <Phone class="size-4" aria-hidden="true" />}
+                    {entry.icon === "web" && <Globe class="size-4" aria-hidden="true" />}
+                    {entry.icon === "map" && <MapPin class="size-4" aria-hidden="true" />}
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle class="break-all text-foreground group-hover:text-pink-700 dark:group-hover:text-pink-300">
+                      {entry.label}
+                    </ItemTitle>
+                  </ItemContent>
+                  {entry.external && (
+                    <ItemActions>
+                      <ExternalLink
+                        class="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-pink-600 dark:group-hover:text-pink-400"
+                        aria-hidden="true"
+                      />
+                    </ItemActions>
+                  )}
+                </Item>
+              </a>
+            ))}
+          </ItemGroup>
+
+          <div class="rounded-xl border border-pink-200/80 bg-pink-50/80 p-4 dark:border-pink-800/50 dark:bg-pink-950/35">
+            <p class="text-sm font-semibold text-pink-950 dark:text-pink-100">Ready to schedule your visit?</p>
+            <p class="mt-1 text-xs leading-relaxed text-pink-900/80 dark:text-pink-200/80">
+              Online scheduling is available through Feet First Institute of Beavercreek, or call{" "}
+              <a href="tel:+19377056100" class="font-semibold underline underline-offset-2">
+                {location.phone}
+              </a>
+              .
+            </p>
+            <Button
+              href={APPOINTMENT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="primary"
+              class="mt-3 w-full"
+            >
+              <Calendar class="size-4" aria-hidden="true" />
+              Book Appointment Online
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    ))
+  }
+</div>

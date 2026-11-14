@@ -1,0 +1,39 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import AboutSection from "@/components/sections/AboutSection.astro";
+import ContactSection from "@/components/sections/ContactSection.astro";
+import FooterSection from "@/components/sections/FooterSection.astro";
+import LinksSection from "@/components/sections/LinksSection.astro";
+import LocationsSection from "@/components/sections/LocationsSection.astro";
+import Navbar from "@/components/sections/Navbar.astro";
+import PublicationsSection from "@/components/sections/PublicationsSection.astro";
+import ServicesSection from "@/components/sections/ServicesSection.astro";
+import TitleSection from "@/components/sections/TitleSection.astro";
+---
+
+<BaseLayout>
+  <Navbar />
+  <TitleSection />
+
+  <main id="main-content" class="mx-auto max-w-6xl space-y-14 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+    <ServicesSection />
+
+    <AboutSection />
+
+    <section aria-label="Contact and Practice Location" class="grid gap-6 lg:grid-cols-12 lg:items-start">
+      <div class="lg:col-span-7">
+        <ContactSection />
+      </div>
+      <div class="lg:col-span-5">
+        <LocationsSection />
+      </div>
+    </section>
+
+    <section aria-label="Research and Patient Resources" class="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <PublicationsSection />
+      <LinksSection />
+    </section>
+  </main>
+
+  <FooterSection />
+</BaseLayout>
