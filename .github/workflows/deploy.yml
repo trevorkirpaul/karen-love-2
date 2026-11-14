@@ -29,10 +29,12 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Build static site
-        run: npm run build
+      - name: Build static site and contact server
+        run: |
+          npm run build
+          npm run build:server
 
-      - name: Deploy dist/ to VPS via rsync over SSH
+      - name: Deploy dist/ and contact server to VPS via rsync over SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -43,3 +45,6 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
           rsync -avz --delete -e "ssh -i ~/.ssh/id_deploy" dist/ "${VPS_USER}@${VPS_HOST}:/var/www/podiatry-site/"
+          ssh -i ~/.ssh/id_deploy "${VPS_USER}@${VPS_HOST}" "mkdir -p /opt/podiatry-contact"
+          rsync -avz -e "ssh -i ~/.ssh/id_deploy" dist-server/contact.mjs "${VPS_USER}@${VPS_HOST}:/opt/podiatry-contact/contact.mjs"
+          ssh -i ~/.ssh/id_deploy "${VPS_USER}@${VPS_HOST}" "if systemctl is-active --quiet karen-contact; then sudo systemctl restart karen-contact; fi"

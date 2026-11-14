@@ -14,7 +14,7 @@ Group=www-data
 WorkingDirectory=/opt/podiatry-contact
 EnvironmentFile=/opt/podiatry-contact/.env
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node /opt/podiatry-contact/dist-server/contact.mjs
+ExecStart=/usr/bin/node /opt/podiatry-contact/contact.mjs
 Restart=on-failure
 RestartSec=5
 

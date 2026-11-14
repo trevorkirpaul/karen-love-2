@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "build:server": "esbuild server/contact.ts --bundle --platform=node --format=esm --outfile=dist-server/contact.mjs --packages=external",
+    "build:server": "esbuild server/contact.ts --bundle --platform=node --format=esm --outfile=dist-server/contact.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
