@@ -72,7 +72,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_model: gemini-3.5-flash-lite
+          gemini_model: gemini-2.5-flash
           workflow_name: gemini-assistant
           upload_artifacts: true
           settings: |
