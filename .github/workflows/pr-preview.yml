@@ -8,6 +8,10 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   build-check:
     if: github.event.action != 'closed'
@@ -44,9 +48,10 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          APPROVE_SIG=$(printf "%s:approve" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
-          ITERATE_SIG=$(printf "%s:iterate" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
-          REJECT_SIG=$(printf "%s:reject" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+          EXP=$(( $(date +%s) + 172800 ))
+          APPROVE_SIG=$(printf "%s:approve:%s" "$PR_NUM" "$EXP" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+          ITERATE_SIG=$(printf "%s:iterate:%s" "$PR_NUM" "$EXP" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+          REJECT_SIG=$(printf "%s:reject:%s" "$PR_NUM" "$EXP" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
 
           FORMATTED_BODY=$(printf "%s" "$PR_BODY" \
             | sed '/^Closes #[0-9]\+/d' \
@@ -67,13 +72,13 @@ jobs:
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
             <p style="margin-bottom:16px"><strong>What would you like to do?</strong></p>
             <p>
-              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=approve&sig=${APPROVE_SIG}" style="background:#16a34a;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=approve&exp=${EXP}&sig=${APPROVE_SIG}" style="background:#16a34a;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
                 Approve &amp; Publish
               </a>
-              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=iterate&sig=${ITERATE_SIG}" style="background:#2563eb;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=iterate&exp=${EXP}&sig=${ITERATE_SIG}" style="background:#2563eb;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
                 Iterate / Request Changes
               </a>
-              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=reject&sig=${REJECT_SIG}" style="background:#dc2626;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block">
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=reject&exp=${EXP}&sig=${REJECT_SIG}" style="background:#dc2626;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block">
                 Reject
               </a>
             </p>

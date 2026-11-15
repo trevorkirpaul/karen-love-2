@@ -13,6 +13,10 @@ permissions:
   issues: write
   pull-requests: write
 
+concurrency:
+  group: gemini-assistant-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   assistant:
     runs-on: ubuntu-latest
@@ -72,7 +76,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-          gemini_model: gemini-2.5-flash
+          gemini_model: gemini-3.8-flash
           workflow_name: gemini-assistant
           upload_artifacts: true
           settings: |
