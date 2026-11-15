@@ -111,6 +111,8 @@ jobs:
           GEMINI_RESPONSE: ${{ steps.gemini_run.outputs.gemini_response }}
         run: |
           rm -rf gemini-artifacts .gemini/telemetry.log
+          git checkout -- .github/ 2>/dev/null || true
+          git clean -fd .github/ 2>/dev/null || true
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "No file changes detected."
