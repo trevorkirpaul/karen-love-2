@@ -25,6 +25,9 @@ describe("contactFormSchema", () => {
         phoneNumber: "(937) 555-0199",
         message: "I would like to schedule an appointment.",
         website: "",
+        company: "",
+        antiSpamToken: "",
+        antiSpamSolution: "",
       });
     }
   });
@@ -70,6 +73,9 @@ describe("normalizeRawContactPayload", () => {
       "last-name": "Smith",
       "phone-number": "937-555-1234",
       message: "Hello",
+      company: "Acme",
+      "anti-spam-token": "tok123",
+      "anti-spam-solution": 42,
     });
 
     expect(normalized).toEqual({
@@ -79,17 +85,24 @@ describe("normalizeRawContactPayload", () => {
       phoneNumber: "937-555-1234",
       message: "Hello",
       website: "",
+      company: "Acme",
+      antiSpamToken: "tok123",
+      antiSpamSolution: 42,
     });
   });
 });
 
 describe("isHoneypotTriggered", () => {
-  it("returns false when website is empty or whitespace", () => {
-    expect(isHoneypotTriggered({ website: "" })).toBe(false);
-    expect(isHoneypotTriggered({ website: "   " })).toBe(false);
+  it("returns false when website and company are empty or whitespace", () => {
+    expect(isHoneypotTriggered({ website: "", company: "" })).toBe(false);
+    expect(isHoneypotTriggered({ website: "   ", company: "  " })).toBe(false);
   });
 
   it("returns true when website has a value", () => {
     expect(isHoneypotTriggered({ website: "https://spam.example" })).toBe(true);
+  });
+
+  it("returns true when company has a value", () => {
+    expect(isHoneypotTriggered({ website: "", company: "Bot Company" })).toBe(true);
   });
 });

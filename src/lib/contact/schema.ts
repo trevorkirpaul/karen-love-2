@@ -42,6 +42,9 @@ export const contactFormSchema = z.object({
     .min(1, "Message is required.")
     .max(5000, "Message must be 5,000 characters or fewer."),
   website: z.string().optional().default(""),
+  company: z.string().optional().default(""),
+  antiSpamToken: z.string().optional().default(""),
+  antiSpamSolution: z.union([z.string(), z.number()]).optional().default(""),
 });
 
 export type ContactFormInput = z.infer<typeof contactFormSchema>;
@@ -62,11 +65,18 @@ export function normalizeRawContactPayload(raw: Record<string, unknown>): Record
     phoneNumber: raw.phoneNumber ?? raw["phone-number"] ?? "",
     message: raw.message,
     website: raw.website ?? "",
+    company: raw.company ?? "",
+    antiSpamToken: raw.antiSpamToken ?? raw["anti-spam-token"] ?? "",
+    antiSpamSolution: raw.antiSpamSolution ?? raw["anti-spam-solution"] ?? "",
   };
 }
 
-export function isHoneypotTriggered(data: Pick<ContactFormInput, "website">): boolean {
-  return typeof data.website === "string" && data.website.trim().length > 0;
+export function isHoneypotTriggered(
+  data: Pick<ContactFormInput, "website"> & { company?: string | null },
+): boolean {
+  const website = typeof data.website === "string" ? data.website.trim() : "";
+  const company = typeof data.company === "string" ? data.company.trim() : "";
+  return website.length > 0 || company.length > 0;
 }
 
 export function formatZodFieldErrors(
