@@ -24,3 +24,10 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+.gemini/
+gha-creds-*.json
+
+# Gemini CLI
+.gemini/
+gha-creds-*.json

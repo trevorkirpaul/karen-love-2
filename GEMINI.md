@@ -1,0 +1,14 @@
+# Repository Instructions
+
+- **Framework:** Astro static site (`src/pages/`, `src/components/`, `src/layouts/`, `src/styles/`) with a standalone Node.js contact API server (`server/contact.ts`, `src/lib/contact/`).
+- **Project Layout:**
+  - `src/pages/` — Astro pages and API routes (`index.astro`, `api/contact.ts`, `api/health.ts`)
+  - `src/components/sections/` — Page section components
+  - `src/components/starwind/` — Starwind UI components
+  - `src/layouts/` — Shared page layouts (`BaseLayout.astro`)
+  - `src/data/profile.ts` — Practice, bio, services, locations, and publications data
+  - `src/lib/contact/` — Contact form validation (`schema.ts`), rate limiting (`rate-limit.ts`), delivery (`mailer.ts`), and request handler (`handler.ts`)
+  - `server/contact.ts` — Standalone HTTP server for the contact API in production
+  - `tests/` — Vitest unit and API tests
+- **Build & Validation:** Always run `npm run build` before finishing any edit to ensure zero build or TypeScript errors. Also run `npm run check` (Astro & TypeScript checks), `npm test` (Vitest), and `npm run build:server` when modifying server or contact API code.
+- **Git Workflow:** Never push directly to `main`. Create a descriptive feature/fix branch, commit changes, and open a Pull Request with `gh pr create` summarizing the updates.
