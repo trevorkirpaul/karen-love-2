@@ -11,9 +11,16 @@ import {
   normalizeRawContactPayload,
   type ContactSubmission,
 } from "@/lib/contact/schema";
+import {
+  createSpamChallenge,
+  evaluateSubmissionSpam,
+  type AntiSpamOptions,
+} from "@/lib/contact/spam";
 
 export interface ContactHandlerDeps {
   sendMessage?: (submission: ContactSubmission) => Promise<DeliveryResult>;
+  enforceChallenge?: boolean;
+  spamOptions?: AntiSpamOptions;
 }
 
 function jsonResponse(body: Record<string, unknown>, status: number, extraHeaders?: HeadersInit): Response {
@@ -25,6 +32,20 @@ function jsonResponse(body: Record<string, unknown>, status: number, extraHeader
       ...extraHeaders,
     },
   });
+}
+
+export async function handleContactGet(
+  _request?: Request,
+  options?: AntiSpamOptions,
+): Promise<Response> {
+  const challenge = createSpamChallenge(options);
+  return jsonResponse(
+    {
+      ok: true,
+      ...challenge,
+    },
+    200,
+  );
 }
 
 function getClientIp(request: Request, fallbackAddress?: string): string {
@@ -117,6 +138,37 @@ export async function handleContactPost(
       },
       200,
     );
+  }
+
+  // Comprehensive anti-spam verification:
+  // Evaluates multi-honeypots, content heuristics, time-to-submit, challenge token, and replay prevention.
+  const spamResult = evaluateSubmissionSpam(parsed.data, {
+    ...deps.spamOptions,
+    enforceChallenge: deps.enforceChallenge,
+  });
+
+  if (!spamResult.allowed) {
+    if (spamResult.action === "silent_drop") {
+      console.info(`[contact-spam] Silently dropping submission: ${spamResult.reason}`);
+      return jsonResponse(
+        {
+          ok: true,
+          message: "You have successfully sent your message.",
+        },
+        200,
+      );
+    }
+
+    if (spamResult.action === "reject") {
+      return jsonResponse(
+        {
+          ok: false,
+          error: spamResult.reason,
+          code: spamResult.code,
+        },
+        400,
+      );
+    }
   }
 
   const clientIp = getClientIp(request, clientAddress);

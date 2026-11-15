@@ -23,10 +23,16 @@ import { DOCTOR_PROFILE } from "@/data/profile";
 
   <CardContent class="p-6">
     <form id="contact-form" action="/api/contact" method="post" class="space-y-4" novalidate>
-      <!-- Honeypot field for automated bot filtering -->
-      <div class="sr-only" aria-hidden="true">
+      <!-- Honeypot fields for automated bot filtering -->
+      <div
+        class="sr-only"
+        aria-hidden="true"
+        style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; z-index: -1;"
+      >
         <label for="contact-website">Leave this field empty</label>
         <input id="contact-website" type="text" name="website" tabindex="-1" autocomplete="off" />
+        <label for="contact-company">Do not fill this field</label>
+        <input id="contact-company" type="text" name="company" tabindex="-1" autocomplete="off" />
       </div>
 
       <div class="flex flex-col gap-4">
@@ -155,6 +161,91 @@ import { DOCTOR_PROFILE } from "@/data/profile";
   const errorAlert = document.getElementById("contact-error-alert");
   const errorText = document.getElementById("contact-error-text");
 
+  interface AntiSpamState {
+    token: string;
+    salt: string;
+    difficulty: number;
+    solution: number | string;
+    timestamp: number;
+  }
+
+  let antiSpamState: AntiSpamState | null = null;
+  let challengePromise: Promise<AntiSpamState | null> | null = null;
+
+  async function solvePoW(salt: string, difficulty: number): Promise<number> {
+    if (difficulty <= 0) return 0;
+    const prefix = "0".repeat(difficulty);
+    const encoder = new TextEncoder();
+    let nonce = 0;
+    while (nonce < 1_000_000) {
+      const data = encoder.encode(`${salt}:${nonce}`);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+      if (hex.startsWith(prefix)) {
+        return nonce;
+      }
+      nonce += 1;
+    }
+    return nonce;
+  }
+
+  async function loadAntiSpamChallenge(): Promise<AntiSpamState | null> {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        ok?: boolean;
+        token?: string;
+        salt?: string;
+        difficulty?: number;
+      };
+      if (data.ok && data.token && data.salt && typeof data.difficulty === "number") {
+        const solution = await solvePoW(data.salt, data.difficulty);
+        const state: AntiSpamState = {
+          token: data.token,
+          salt: data.salt,
+          difficulty: data.difficulty,
+          solution,
+          timestamp: Date.now(),
+        };
+        antiSpamState = state;
+        return state;
+      }
+    } catch {
+      // Non-blocking background fetch
+    }
+    return null;
+  }
+
+  function getOrFetchChallenge(): Promise<AntiSpamState | null> {
+    if (antiSpamState && Date.now() - antiSpamState.timestamp < 90 * 60 * 1000) {
+      return Promise.resolve(antiSpamState);
+    }
+    if (!challengePromise) {
+      challengePromise = loadAntiSpamChallenge().finally(() => {
+        challengePromise = null;
+      });
+    }
+    return challengePromise;
+  }
+
+  if (typeof window !== "undefined") {
+    const triggerEvents = ["focusin", "pointerenter", "touchstart", "keydown"] as const;
+    for (const evt of triggerEvents) {
+      form?.addEventListener(
+        evt,
+        () => {
+          void getOrFetchChallenge();
+        },
+        { once: true, passive: true },
+      );
+    }
+  }
+
   function clearFieldErrors() {
     document.querySelectorAll<HTMLElement>("[data-field-error]").forEach((el) => {
       el.textContent = "";
@@ -189,44 +280,67 @@ import { DOCTOR_PROFILE } from "@/data/profile";
     }
   }
 
+  async function submitPayload(payload: Record<string, unknown>) {
+    const response = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    return (await response.json()) as {
+      ok?: boolean;
+      message?: string;
+      error?: string;
+      code?: string;
+      fieldErrors?: Record<string, string>;
+    };
+  }
+
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearFieldErrors();
     successAlert?.classList.add("hidden");
     errorAlert?.classList.add("hidden");
 
-    const formData = new FormData(form);
-    const payload = {
-      email: String(formData.get("email") ?? ""),
-      firstName: String(formData.get("firstName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-      phoneNumber: String(formData.get("phoneNumber") ?? ""),
-      message: String(formData.get("message") ?? ""),
-      website: String(formData.get("website") ?? ""),
-    };
-
     setLoading(true);
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let challenge = await getOrFetchChallenge();
 
-      const result = (await response.json()) as {
-        ok?: boolean;
-        message?: string;
-        error?: string;
-        fieldErrors?: Record<string, string>;
+      const formData = new FormData(form);
+      const payload: Record<string, unknown> = {
+        email: String(formData.get("email") ?? ""),
+        firstName: String(formData.get("firstName") ?? ""),
+        lastName: String(formData.get("lastName") ?? ""),
+        phoneNumber: String(formData.get("phoneNumber") ?? ""),
+        message: String(formData.get("message") ?? ""),
+        website: String(formData.get("website") ?? ""),
+        company: String(formData.get("company") ?? ""),
+        antiSpamToken: challenge?.token ?? "",
+        antiSpamSolution: challenge?.solution ?? "",
       };
 
-      if (response.ok && result.ok) {
+      let result = await submitPayload(payload);
+
+      // If token expired, transparently refresh challenge and retry once
+      if (!result.ok && result.code === "TOKEN_EXPIRED") {
+        antiSpamState = null;
+        challenge = await loadAntiSpamChallenge();
+        if (challenge) {
+          payload.antiSpamToken = challenge.token;
+          payload.antiSpamSolution = challenge.solution;
+          result = await submitPayload(payload);
+        }
+      }
+
+      if (result.ok) {
         if (successText && result.message) {
           successText.textContent = result.message;
         }
         successAlert?.classList.remove("hidden");
         form.reset();
+        antiSpamState = null;
+        void getOrFetchChallenge();
         return;
       }
 

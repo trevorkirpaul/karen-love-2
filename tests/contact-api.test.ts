@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContactConfigurationError } from "@/lib/contact/mailer";
 import { clearRateLimitStore } from "@/lib/contact/rate-limit";
-import { handleContactPost } from "@/lib/contact/handler";
+import { handleContactGet, handleContactPost } from "@/lib/contact/handler";
+import { clearSpamStores, createSpamChallenge, solvePoWNode } from "@/lib/contact/spam";
 
 function makeJsonRequest(body: unknown, ip = "203.0.113.10"): Request {
   return new Request("https://example.com/api/contact", {
@@ -14,9 +15,22 @@ function makeJsonRequest(body: unknown, ip = "203.0.113.10"): Request {
   });
 }
 
+describe("GET /api/contact handler", () => {
+  it("returns 200 with challenge token, salt, and difficulty", async () => {
+    const response = await handleContactGet(new Request("https://example.com/api/contact"));
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.ok).toBe(true);
+    expect(typeof json.token).toBe("string");
+    expect(typeof json.salt).toBe("string");
+    expect(typeof json.difficulty).toBe("number");
+  });
+});
+
 describe("POST /api/contact handler", () => {
   beforeEach(() => {
     clearRateLimitStore();
+    clearSpamStores();
   });
 
   it("delivers a valid JSON submission and returns 200", async () => {
@@ -106,6 +120,97 @@ describe("POST /api/contact handler", () => {
     );
 
     expect(response.status).toBe(200);
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("silently accepts company honeypot submissions without calling sendMessage", async () => {
+    const sendMessage = vi.fn();
+    const response = await handleContactPost(
+      makeJsonRequest({
+        email: "bot@spam.example",
+        firstName: "Spam",
+        lastName: "Bot",
+        message: "Promotional pitch",
+        company: "Automated SEO Corp",
+      }),
+      undefined,
+      { sendMessage },
+    );
+
+    expect(response.status).toBe(200);
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("silently accepts content spam submissions without calling sendMessage", async () => {
+    const sendMessage = vi.fn();
+    const response = await handleContactPost(
+      makeJsonRequest({
+        email: "spammer@promo.example",
+        firstName: "SEO",
+        lastName: "Expert",
+        message: "Guaranteed rank on google and backlinks at http://seo.example",
+      }),
+      undefined,
+      { sendMessage },
+    );
+
+    expect(response.status).toBe(200);
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("accepts valid submission when challenge is enforced", async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ channel: "smtp" });
+    const now = 20_000_000;
+    const challenge = createSpamChallenge({ difficulty: 2, now });
+    const solution = solvePoWNode(challenge.salt, challenge.difficulty);
+
+    const response = await handleContactPost(
+      makeJsonRequest({
+        email: "patient@example.com",
+        firstName: "Jane",
+        lastName: "Doe",
+        phoneNumber: "937-555-0100",
+        message: "I need to schedule an appointment.",
+        antiSpamToken: challenge.token,
+        antiSpamSolution: solution,
+      }),
+      undefined,
+      {
+        sendMessage,
+        enforceChallenge: true,
+        spamOptions: { now: now + 4000, minSubmissionTimeMs: 2000 },
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(sendMessage).toHaveBeenCalledOnce();
+  });
+
+  it("returns 400 with TOKEN_EXPIRED when challenge is expired", async () => {
+    const sendMessage = vi.fn();
+    const now = 20_000_000;
+    const challenge = createSpamChallenge({ difficulty: 2, now });
+    const solution = solvePoWNode(challenge.salt, challenge.difficulty);
+
+    const response = await handleContactPost(
+      makeJsonRequest({
+        email: "patient@example.com",
+        firstName: "Jane",
+        lastName: "Doe",
+        message: "Appointment query",
+        antiSpamToken: challenge.token,
+        antiSpamSolution: solution,
+      }),
+      undefined,
+      {
+        sendMessage,
+        spamOptions: { now: now + 3 * 60 * 60 * 1000, maxTokenAgeMs: 2 * 60 * 60 * 1000 },
+      },
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe("TOKEN_EXPIRED");
     expect(sendMessage).not.toHaveBeenCalled();
   });
 

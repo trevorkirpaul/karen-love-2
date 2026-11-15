@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
-import { handleContactPost, type ContactHandlerDeps } from "@/lib/contact/handler";
+import { handleContactGet, handleContactPost, type ContactHandlerDeps } from "@/lib/contact/handler";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
@@ -64,6 +64,19 @@ export async function routeContactRequest(
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       }),
     );
+    return;
+  }
+
+  if (
+    method === "GET" &&
+    (url.pathname === "/api/contact" || url.pathname === "/api/contact/challenge")
+  ) {
+    const request = new Request(url.href, {
+      method: "GET",
+      headers: toHeaders(req),
+    });
+    const response = await handleContactGet(request);
+    await sendNodeResponse(res, response);
     return;
   }
 

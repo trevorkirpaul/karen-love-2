@@ -49,6 +49,19 @@ describe("routeContactRequest", () => {
     expect(json.status).toBe("ok");
   });
 
+  it("responds 200 on GET /api/contact with challenge data", async () => {
+    const req = makeMockReq("GET", "/api/contact");
+    const mock = makeMockRes();
+
+    await routeContactRequest(req, mock.res);
+
+    expect(mock.res.statusCode).toBe(200);
+    const json = JSON.parse(mock.getBody());
+    expect(json.ok).toBe(true);
+    expect(typeof json.token).toBe("string");
+    expect(typeof json.salt).toBe("string");
+  });
+
   it("routes POST /api/contact to handleContactPost", async () => {
     const sendMessage = vi.fn().mockResolvedValue({ channel: "resend" });
     const req = makeMockReq(
