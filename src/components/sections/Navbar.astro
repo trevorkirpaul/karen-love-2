@@ -6,6 +6,7 @@ import { APPOINTMENT_URL, DOCTOR_PROFILE, LOCATIONS } from "@/data/profile";
 
 const phone = LOCATIONS[0]?.phone ?? "937-705-6100";
 const mapUrl = LOCATIONS[0]?.items.find((item) => item.icon === "map")?.href ?? "https://www.google.com/maps";
+const locationName = LOCATIONS[0]?.name ?? "Practice Location";
 ---
 
 <nav
@@ -56,7 +57,7 @@ const mapUrl = LOCATIONS[0]?.items.find((item) => item.icon === "map")?.href ?? 
         rel="noopener noreferrer"
         variant="outline"
         size="sm"
-        class="border-border bg-card text-foreground hover:bg-muted shadow-xs"
+        class="hidden border-border bg-card text-foreground hover:bg-muted shadow-xs lg:inline-flex"
       >
         <MapPin class="size-4 text-pink-600 dark:text-pink-400" aria-hidden="true" />
         <span>Directions</span>
@@ -72,6 +73,27 @@ const mapUrl = LOCATIONS[0]?.items.find((item) => item.icon === "map")?.href ?? 
       >
         <Calendar class="size-4" aria-hidden="true" />
         <span>Book Visit</span>
+      </Button>
+    </div>
+  </div>
+
+  <div class="border-t border-border/60 bg-muted/70 px-4 py-2 sm:px-6 lg:hidden dark:bg-zinc-900/90">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+      <div class="flex min-w-0 items-center gap-2">
+        <MapPin class="size-4 shrink-0 text-pink-600 dark:text-pink-400" aria-hidden="true" />
+        <span class="truncate text-xs font-medium text-foreground sm:text-sm">
+          {locationName}
+        </span>
+      </div>
+      <Button
+        href={mapUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        variant="outline"
+        size="sm"
+        class="shrink-0 border-border bg-card text-foreground hover:bg-muted shadow-xs text-xs py-1 px-2.5 h-8"
+      >
+        <span>Directions</span>
       </Button>
     </div>
   </div>
