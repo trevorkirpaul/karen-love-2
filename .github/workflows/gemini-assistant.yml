@@ -1,0 +1,70 @@
+name: Gemini Assistant
+
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  assistant:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git user
+        run: |
+          git config user.name "gemini-cli[bot]"
+          git config user.email "gemini-cli[bot]@users.noreply.github.com"
+
+      - name: Run Gemini CLI
+        id: gemini_run
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+          ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
+          ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+        with:
+          gemini_model: gemini-3.5-flash-lite
+          workflow_name: gemini-assistant
+          settings: |
+            {
+              "model": {
+                "maxSessionTurns": 25
+              }
+            }
+          prompt: |
+            You are an autonomous coding assistant working on repository ${{ github.repository }}.
+            Issue/PR #${{ env.ISSUE_NUMBER }}: "${{ env.ISSUE_TITLE }}"
+            Description: ${{ env.ISSUE_BODY }}
+            Latest Request: ${{ env.COMMENT_BODY }}
+
+            Instructions:
+            1. Inspect the codebase and implement the requested changes cleanly, following GEMINI.md.
+            2. Run `npm run build` (and `npm run check` if available) to verify there are zero errors.
+            3. Create a new branch (e.g., `gemini/issue-${{ env.ISSUE_NUMBER }}`), stage and commit your changes, and push the branch to origin.
+            4. Open a Pull Request referencing `Closes #${{ env.ISSUE_NUMBER }}` using `gh pr create` (or if already on a PR branch, push the commits to that PR branch).
+            5. Post a brief comment on #${{ env.ISSUE_NUMBER }} using `gh issue comment` with a link to the Pull Request and a summary of what you changed.
