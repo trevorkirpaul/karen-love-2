@@ -95,6 +95,8 @@ jobs:
           HEAD_REF: ${{ steps.branch_info.outputs.head_ref }}
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
           ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
+          ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
           GEMINI_RESPONSE: ${{ steps.gemini_run.outputs.gemini_response }}
         run: |
           rm -rf gemini-artifacts .gemini/telemetry.log
@@ -104,10 +106,20 @@ jobs:
             exit 0
           fi
 
+          # Strip the "@gemini-cli " prefix so the email reads cleanly
+          CLEAN_REQUEST=$(printf "%s" "${COMMENT_BODY:-$ISSUE_BODY}" | sed 's/^@gemini-cli[[:space:]]*//')
+
           if [[ "$IS_PR" == "true" ]]; then
             git add -A
             git commit -m "chore: iterate on PR #${ISSUE_NUMBER}"
             git push origin "$HEAD_REF"
+
+            # Update PR body with the latest iteration request & summary so the preview email shows the full text
+            gh pr edit "$ISSUE_NUMBER" --body "### Latest Change Request
+          ${CLEAN_REQUEST}
+
+          ### Summary of Changes
+          ${GEMINI_RESPONSE}"
           else
             BRANCH_NAME="gemini/issue-${ISSUE_NUMBER}-$(date +%s)"
             git checkout -b "$BRANCH_NAME"
@@ -121,5 +133,9 @@ jobs:
               --title "${ISSUE_TITLE}" \
               --body "Closes #${ISSUE_NUMBER}
 
-            ${GEMINI_RESPONSE}"
+          ### Requested Change
+          ${CLEAN_REQUEST}
+
+          ### Summary of Changes
+          ${GEMINI_RESPONSE}"
           fi
