@@ -118,19 +118,23 @@ import { DOCTOR_PROFILE } from "@/data/profile";
       </div>
 
       <div id="contact-status" aria-live="polite" class="space-y-2">
-        <Alert id="contact-success-alert" variant="success" class="hidden items-center">
-          <CircleCheck class="size-4" aria-hidden="true" />
-          <AlertDescription id="contact-success-text">
-            You have successfully sent your message.
-          </AlertDescription>
-        </Alert>
+        <div id="contact-success-alert" class="hidden">
+          <Alert variant="success" class="flex items-center gap-3 border-green-600/30 bg-green-50 text-green-900 dark:border-green-500/30 dark:bg-green-950/40 dark:text-green-100">
+            <CircleCheck class="size-5 shrink-0 text-green-700 dark:text-green-400" aria-hidden="true" />
+            <AlertDescription id="contact-success-text" class="text-sm font-medium">
+              You have successfully sent your message.
+            </AlertDescription>
+          </Alert>
+        </div>
 
-        <Alert id="contact-error-alert" variant="error" class="hidden items-center">
-          <CircleAlert class="size-4" aria-hidden="true" />
-          <AlertDescription id="contact-error-text">
-            Your message could not be sent. Please try again later.
-          </AlertDescription>
-        </Alert>
+        <div id="contact-error-alert" class="hidden">
+          <Alert variant="error" class="flex items-center gap-3">
+            <CircleAlert class="size-5 shrink-0 text-error dark:text-red-400" aria-hidden="true" />
+            <AlertDescription id="contact-error-text" class="text-sm font-medium">
+              Your message could not be sent. Please try again later.
+            </AlertDescription>
+          </Alert>
+        </div>
       </div>
 
       <Button id="contact-submit" type="submit" variant="primary" size="lg" class="w-full shadow-xs">
