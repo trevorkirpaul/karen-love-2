@@ -1,3 +1,9 @@
+# Project Map & Rules
+- **Pages:** `src/pages/`
+- **Components & Layouts:** `src/components/`, `src/layouts/`
+- **Styles & Config:** `src/styles/`, `astro.config.mjs`
+- **Validation:** Run `npm run build` before committing.
+
 # Repository Instructions
 
 - **Framework:** Astro static site (`src/pages/`, `src/components/`, `src/layouts/`, `src/styles/`) with a standalone Node.js contact API server (`server/contact.ts`, `src/lib/contact/`).
