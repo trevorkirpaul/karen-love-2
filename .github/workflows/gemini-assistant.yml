@@ -17,9 +17,27 @@ jobs:
   assistant:
     runs-on: ubuntu-latest
     steps:
+      - name: Determine Target Branch
+        id: branch_info
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          IS_PR: ${{ github.event.issue.pull_request != null || github.event_name == 'pull_request' }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          if [[ "$IS_PR" == "true" ]]; then
+            HEAD_REF=$(gh pr view "$PR_NUMBER" --json headRefName -q .headRefName)
+            echo "is_pr=true" >> "$GITHUB_OUTPUT"
+            echo "head_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_pr=false" >> "$GITHUB_OUTPUT"
+            echo "head_ref=main" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ steps.branch_info.outputs.head_ref }}
+          token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -40,7 +58,7 @@ jobs:
         id: gemini_run
         uses: google-github-actions/run-gemini-cli@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           GEMINI_CLI_TRUST_WORKSPACE: 'true'
           ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
           ISSUE_BODY: ${{ github.event.issue.body || github.event.pull_request.body }}
@@ -66,13 +84,15 @@ jobs:
             Instructions:
             1. Inspect the codebase and implement the requested changes cleanly, following GEMINI.md.
             2. Run `npm run build` (and `npm run check` if available) to verify there are zero errors.
-            3. Leave the modified files in the working directory—do NOT run git commit, git push, or gh pr create (the workflow handles git and PR creation automatically).
-            4. End your response with a concise summary of what you changed and why.
+            3. Leave the modified files in the working directory—do NOT run git commit, git push, or gh pr create.
+            4. End your response with a concise, plain-English summary of what you changed for a non-technical reviewer.
 
-      - name: Commit, Push, and Open Pull Request
+      - name: Commit, Push, and Open or Update PR
         if: steps.gemini_run.outcome == 'success'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          IS_PR: ${{ steps.branch_info.outputs.is_pr }}
+          HEAD_REF: ${{ steps.branch_info.outputs.head_ref }}
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
           ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
           GEMINI_RESPONSE: ${{ steps.gemini_run.outputs.gemini_response }}
@@ -80,23 +100,26 @@ jobs:
           rm -rf gemini-artifacts .gemini/telemetry.log
 
           if [[ -z "$(git status --porcelain)" ]]; then
-            echo "No file changes detected; skipping PR creation."
+            echo "No file changes detected."
             exit 0
           fi
 
-          BRANCH_NAME="gemini/issue-${ISSUE_NUMBER}-$(date +%s)"
-          git checkout -b "$BRANCH_NAME"
-          git add -A
-          git commit -m "fix: resolve #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
-          git push -u origin "$BRANCH_NAME"
+          if [[ "$IS_PR" == "true" ]]; then
+            git add -A
+            git commit -m "chore: iterate on PR #${ISSUE_NUMBER}"
+            git push origin "$HEAD_REF"
+          else
+            BRANCH_NAME="gemini/issue-${ISSUE_NUMBER}-$(date +%s)"
+            git checkout -b "$BRANCH_NAME"
+            git add -A
+            git commit -m "fix: resolve #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
+            git push -u origin "$BRANCH_NAME"
 
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH_NAME" \
-            --title "Fix #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
-            --body "Closes #${ISSUE_NUMBER}
+            gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "${ISSUE_TITLE}" \
+              --body "Closes #${ISSUE_NUMBER}
 
-          ### Summary of Changes
-          ${GEMINI_RESPONSE}")
-
-          gh issue comment "$ISSUE_NUMBER" --body "I've implemented the fix and opened a Pull Request: ${PR_URL}"
+            ${GEMINI_RESPONSE}"
+          fi

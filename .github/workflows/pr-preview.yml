@@ -1,0 +1,92 @@
+name: PR Preview & Email Approval
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  build-check:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+
+      - name: Deploy Ephemeral Preview to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist/*"
+          strip_components: 1
+          target: "/var/www/previews/pr-${{ github.event.pull_request.number }}"
+
+      - name: Generate Signed Action Links & Email Karen
+        env:
+          SIGNING_SECRET: ${{ secrets.APPROVAL_SIGNING_SECRET }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          APPROVE_SIG=$(printf "%s:approve" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+          ITERATE_SIG=$(printf "%s:iterate" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+          REJECT_SIG=$(printf "%s:reject" "$PR_NUM" | openssl dgst -sha256 -hmac "$SIGNING_SECRET" | awk '{print $2}')
+
+          cat <<EOF > email.html
+          <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;line-height:1.5">
+            <h2>Website Preview Ready: ${PR_TITLE}</h2>
+            <p>${PR_BODY}</p>
+            <p style="margin:24px 0">
+              <a href="https://pr-${PR_NUM}.preview.karenkirpaul.com" style="background:#111827;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:600">
+                Open Live Preview
+              </a>
+            </p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
+            <p style="margin-bottom:16px"><strong>What would you like to do?</strong></p>
+            <p>
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=approve&sig=${APPROVE_SIG}" style="background:#16a34a;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
+                Approve &amp; Publish
+              </a>
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=iterate&sig=${ITERATE_SIG}" style="background:#2563eb;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block;margin-right:8px">
+                Iterate / Request Changes
+              </a>
+              <a href="https://bot.karenkirpaul.com/api/review?pr=${PR_NUM}&action=reject&sig=${REJECT_SIG}" style="background:#dc2626;color:#fff;padding:10px 16px;text-decoration:none;border-radius:6px;display:inline-block">
+                Reject
+              </a>
+            </p>
+          </div>
+          EOF
+
+      - name: Send Preview Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "Website Preview Ready (#${{ github.event.pull_request.number }}): ${{ github.event.pull_request.title }}"
+          to: ${{ secrets.KAREN_EMAIL }}
+          from: "Website Assistant <${{ secrets.SMTP_USERNAME }}>"
+          html_body: file://email.html
+
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove Ephemeral Preview Directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: rm -rf /var/www/previews/pr-${{ github.event.pull_request.number }}
