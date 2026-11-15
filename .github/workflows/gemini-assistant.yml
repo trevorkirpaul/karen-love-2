@@ -40,7 +40,6 @@ jobs:
         id: gemini_run
         uses: google-github-actions/run-gemini-cli@v0
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GEMINI_CLI_TRUST_WORKSPACE: 'true'
           ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
@@ -67,6 +66,37 @@ jobs:
             Instructions:
             1. Inspect the codebase and implement the requested changes cleanly, following GEMINI.md.
             2. Run `npm run build` (and `npm run check` if available) to verify there are zero errors.
-            3. Create a new branch (e.g., `gemini/issue-${{ env.ISSUE_NUMBER }}`), stage and commit your changes, and push the branch to origin.
-            4. Open a Pull Request referencing `Closes #${{ env.ISSUE_NUMBER }}` using `gh pr create` (or if already on a PR branch, push the commits to that PR branch).
-            5. Post a brief comment on #${{ env.ISSUE_NUMBER }} using `gh issue comment` with a link to the Pull Request and a summary of what you changed.
+            3. Leave the modified files in the working directory—do NOT run git commit, git push, or gh pr create (the workflow handles git and PR creation automatically).
+            4. End your response with a concise summary of what you changed and why.
+
+      - name: Commit, Push, and Open Pull Request
+        if: steps.gemini_run.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title }}
+          GEMINI_RESPONSE: ${{ steps.gemini_run.outputs.gemini_response }}
+        run: |
+          rm -rf gemini-artifacts .gemini/telemetry.log
+
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No file changes detected; skipping PR creation."
+            exit 0
+          fi
+
+          BRANCH_NAME="gemini/issue-${ISSUE_NUMBER}-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+          git add -A
+          git commit -m "fix: resolve #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
+          git push -u origin "$BRANCH_NAME"
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Fix #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
+            --body "Closes #${ISSUE_NUMBER}
+
+          ### Summary of Changes
+          ${GEMINI_RESPONSE}")
+
+          gh issue comment "$ISSUE_NUMBER" --body "I've implemented the fix and opened a Pull Request: ${PR_URL}"
