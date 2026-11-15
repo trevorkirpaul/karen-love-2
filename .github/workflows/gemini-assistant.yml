@@ -77,13 +77,13 @@ jobs:
         with:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-3.8-flash
-          gemini_debug: true
+          gemini_debug: false
           workflow_name: gemini-assistant
           upload_artifacts: true
           settings: |
             {
               "model": {
-                "maxSessionTurns": 60
+                "maxSessionTurns": 120
               }
             }
           prompt: |
