@@ -49,6 +49,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure Chromium is available for visual checks
+        run: |
+          if ! command -v google-chrome >/dev/null 2>&1 && ! command -v chromium >/dev/null 2>&1; then
+            npx playwright install chromium
+          fi
+
       - name: Configure Git user
         run: |
           git config user.name "gemini-cli[bot]"
@@ -83,7 +89,7 @@ jobs:
 
             Instructions:
             1. Inspect the codebase and implement the requested changes cleanly, following GEMINI.md.
-            2. Run `npm run build` (and `npm run check` if available) to verify there are zero errors.
+            2. Run `npm run build && npm run test:visual` (and `npm run check` if available) to verify there are zero build errors, horizontal overflow, or visual defects on mobile, tablet, and desktop. If `test:visual` reports overflow, fix the layout and re-run until it passes.
             3. Leave the modified files in the working directory—do NOT run git commit, git push, or gh pr create.
             4. End your response with a concise, plain-English summary of what you changed for a non-technical reviewer.
 
