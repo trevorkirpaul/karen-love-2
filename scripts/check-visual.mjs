@@ -137,14 +137,46 @@ async function main() {
           }
         }
 
+        const topNavDirections = document.querySelector('nav a[href*="google.com/maps"], nav a[href*="maps"]');
+        const topNavDirectionsVisible = topNavDirections ? getComputedStyle(topNavDirections).display !== "none" : false;
+
+        const mobileBanner = document.querySelector('aside[aria-label="Practice location and directions"]');
+        const mobileBannerVisible = mobileBanner ? getComputedStyle(mobileBanner).display !== "none" : false;
+
         return {
           innerWidth,
           scrollWidth,
           clientWidth,
           overflowing: overflowing.slice(0, 10),
           brokenImages,
+          topNavDirectionsVisible,
+          mobileBannerVisible,
         };
       });
+
+      if (vp.width < 1024) {
+        if (metrics.topNavDirectionsVisible) {
+          failures.push(
+            `[${vp.name} ${vp.width}x${vp.height}] Top navigation bar should not show Directions button on mobile viewports`,
+          );
+        }
+        if (!metrics.mobileBannerVisible) {
+          failures.push(
+            `[${vp.name} ${vp.width}x${vp.height}] Mobile directions banner should be visible below top nav`,
+          );
+        }
+      } else {
+        if (!metrics.topNavDirectionsVisible) {
+          failures.push(
+            `[${vp.name} ${vp.width}x${vp.height}] Top navigation bar should show Directions button on desktop viewports`,
+          );
+        }
+        if (metrics.mobileBannerVisible) {
+          failures.push(
+            `[${vp.name} ${vp.width}x${vp.height}] Mobile directions banner should be hidden on desktop viewports`,
+          );
+        }
+      }
 
       if (metrics.scrollWidth > metrics.clientWidth) {
         failures.push(
