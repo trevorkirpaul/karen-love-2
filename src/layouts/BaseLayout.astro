@@ -12,6 +12,9 @@ const { title = SITE_METADATA.title, description = SITE_METADATA.description } =
 
 const canonicalUrl = Astro.url ? new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href : undefined;
 const gaId = import.meta.env.PUBLIC_GA_ID;
+const isProd = import.meta.env.PROD;
+const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID ?? "c13bc96d-3076-4df1-a155-22fa045eff16";
+const umamiUrl = import.meta.env.PUBLIC_UMAMI_URL ?? "https://analytics.infusion-log.com";
 
 const primaryLocation = LOCATIONS[0];
 const structuredData = {
@@ -66,6 +69,18 @@ const structuredData = {
     />
 
     <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+    {
+      isProd && umamiWebsiteId && (
+        <script
+          is:inline
+          defer
+          src={`${umamiUrl}/script.js`}
+          data-website-id={umamiWebsiteId}
+          data-domains="karenkirpaul.com,www.karenkirpaul.com"
+        />
+      )
+    }
 
     {
       gaId && (
